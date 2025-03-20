@@ -1,0 +1,29 @@
+{
+    "intents": [
+      {
+        "tag": "greeting",
+        "patterns": ["Hi", "Hello", "Hey there", "Good day", "Greetings"],
+        "responses": ["Hello! How can I help you today?", "Hi there! What can I assist you with?"]
+      },
+      {
+        "tag": "goodbye",
+        "patterns": ["Bye", "See you later", "Goodbye", "Thanks, bye"],
+        "responses": ["Goodbye! Have a great day!", "Thanks for chatting. Come back if you need help!"]
+      },
+      {
+        "tag": "order_status",
+        "patterns": ["Where is my order?", "Check order status", "When will my order arrive?", "Track my package"],
+        "responses": ["I'll help you track your order. Could you provide your order number?"]
+      },
+      {
+        "tag": "product_info",
+        "patterns": ["Tell me about this product", "Product details", "Product specifications", "Does this product have"],
+        "responses": ["I can help you with product details. Which product are you interested in?"]
+      },
+      {
+        "tag": "return_policy",
+        "patterns": ["How do I return?", "Return policy", "Can I get a refund?", "Exchange item"],
+        "responses": ["Our return policy allows returns within 30 days of purchase. Would you like more details?"]
+      }
+    ]
+  }
