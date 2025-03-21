@@ -1,9 +1,9 @@
-import numpy as np
+import numpy as np # type: ignore
 import pickle
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.optimizers import SGD
+import tensorflow as tf # type: ignore
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import Dense, Dropout # type: ignore
+from tensorflow.keras.optimizers import SGD# type: ignore
 
 class IntentClassifier:
     def __init__(self):
