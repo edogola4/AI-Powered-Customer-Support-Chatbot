@@ -1,5 +1,5 @@
 # Create requirements.txt
-pip install -U pip
+#pip install -U pip
 pip install tensorflow==2.13.0
 pip install numpy==1.23.5
 pip install pandas==2.0.3
