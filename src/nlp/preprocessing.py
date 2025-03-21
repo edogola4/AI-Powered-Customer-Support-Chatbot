@@ -3,7 +3,6 @@ import pickle
 import numpy as np
 import nltk
 from nltk.stem import WordNetLemmatizer
-#from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
