@@ -3,8 +3,9 @@ import pickle
 import numpy as np
 import nltk
 from nltk.stem import WordNetLemmatizer
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import build_vocab_from_iterator
+import torch
 
 # Download necessary NLTK data
 nltk.download('punkt')
@@ -18,7 +19,7 @@ class TextPreprocessor:
         self.classes = []
         self.documents = []
         self.ignore_letters = ['?', '!', '.', ',']
-        self.tokenizer = None
+        self.vocab = None
         self.max_sequence_length = 20
         
     def preprocess(self):
@@ -38,14 +39,18 @@ class TextPreprocessor:
         self.words = sorted(list(set(self.words)))
         self.classes = sorted(list(set(self.classes)))
         
-        # Create tokenizer
-        self.tokenizer = Tokenizer(num_words=len(self.words))
-        self.tokenizer.fit_on_texts([' '.join(self.words)])
+        # Create vocabulary using torchtext
+        def yield_tokens():
+            for word in self.words:
+                yield [word]
+        
+        self.vocab = build_vocab_from_iterator(yield_tokens(), specials=["<unk>"])
+        self.vocab.set_default_index(self.vocab["<unk>"])
         
         # Save data
         pickle.dump(self.words, open('models/words.pkl', 'wb'))
         pickle.dump(self.classes, open('models/classes.pkl', 'wb'))
-        pickle.dump(self.tokenizer, open('models/tokenizer.pkl', 'wb'))
+        pickle.dump(self.vocab, open('models/vocab.pkl', 'wb'))
         
         return self.words, self.classes, self.documents
     
@@ -65,7 +70,6 @@ class TextPreprocessor:
             # Create output row
             output_row = list(output_empty)
             output_row[self.classes.index(document[1])] = 1
-            
             training.append([bag, output_row])
         
         # Shuffle features
@@ -92,3 +96,10 @@ class TextPreprocessor:
                     bag[i] = 1
         
         return np.array([bag])
+    
+    # New method to convert to PyTorch tensor
+    def text_to_tensor(self, sentence):
+        # Process input sentence
+        processed_input = self.prepare_input(sentence)
+        # Convert numpy array to PyTorch tensor
+        return torch.tensor(processed_input, dtype=torch.float32)
