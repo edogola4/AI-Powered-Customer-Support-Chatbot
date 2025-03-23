@@ -1,24 +1,141 @@
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import load_model
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
 import pickle
 import time
 import matplotlib.pyplot as plt
-from src.nlp.preprocessing import TextPreprocessor
-from src.nlp.model import IntentClassifier
+import os
 import json
+from src.nlp.preprocessing import TextPreprocessor  # Assuming this exists
+
+class IntentClassifierNN(nn.Module):
+    """PyTorch implementation of the intent classifier neural network"""
+    def __init__(self, input_size, output_size, layer_config):
+        super(IntentClassifierNN, self).__init__()
+        
+        layers = []
+        # Input layer
+        layers.append(nn.Linear(input_size, layer_config[0][0]))
+        layers.append(nn.ReLU())
+        layers.append(nn.Dropout(layer_config[0][1]))
+        
+        # Hidden layers
+        for i in range(1, len(layer_config)):
+            layers.append(nn.Linear(layer_config[i-1][0], layer_config[i][0]))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(layer_config[i][1]))
+            
+        # Output layer
+        layers.append(nn.Linear(layer_config[-1][0], output_size))
+        layers.append(nn.Softmax(dim=1))
+        
+        self.model = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.model(x)
+
+def train_model(model, train_loader, criterion, optimizer, epochs=100):
+    """Train the PyTorch model"""
+    device = torch.device("mps" if torch.backends.mps.is_available() else 
+                         "cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
+    model.to(device)
+    model.train()
+    
+    history = {'loss': [], 'accuracy': []}
+    
+    for epoch in range(epochs):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            
+            # Zero the parameter gradients
+            optimizer.zero_grad()
+            
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            
+            # Backward pass and optimize
+            loss.backward()
+            optimizer.step()
+            
+            # Calculate stats
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            _, label_indices = torch.max(labels, 1)
+            total += labels.size(0)
+            correct += (predicted == label_indices).sum().item()
+        
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = correct / total
+        
+        history['loss'].append(epoch_loss)
+        history['accuracy'].append(epoch_acc)
+        
+        if (epoch + 1) % 20 == 0:
+            print(f'Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.4f}')
+    
+    return history
+
+def evaluate_model(model, data_loader):
+    """Evaluate the model accuracy"""
+    device = torch.device("mps" if torch.backends.mps.is_available() else 
+                         "cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    
+    correct = 0
+    total = 0
+    loss_sum = 0
+    criterion = nn.CrossEntropyLoss()
+    
+    with torch.no_grad():
+        for inputs, labels in data_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss_sum += loss.item()
+            
+            _, predicted = torch.max(outputs.data, 1)
+            _, label_indices = torch.max(labels, 1)
+            total += labels.size(0)
+            correct += (predicted == label_indices).sum().item()
+    
+    accuracy = correct / total
+    avg_loss = loss_sum / len(data_loader)
+    
+    return avg_loss, accuracy
+
+def get_model_size(model):
+    """Get the size of the PyTorch model in MB"""
+    model_path = 'models/temp_model.pt'
+    torch.save(model.state_dict(), model_path)
+    size_mb = os.path.getsize(model_path) / (1024 * 1024)
+    return size_mb
 
 def optimize_model():
     """Optimize the model and evaluate its performance"""
     print("Loading model and data...")
     
-    # Load the model and preprocessor
+    # Load the preprocessor and prepare data
     preprocessor = TextPreprocessor('data/intents/intents.json')
     words, classes, documents = preprocessor.preprocess()
     train_x, train_y = preprocessor.create_training_data()
     
-    # Initialize classifier
-    classifier = IntentClassifier()
+    # Convert to PyTorch tensors
+    train_x_tensor = torch.FloatTensor(train_x)
+    train_y_tensor = torch.FloatTensor(train_y)
+    
+    # Create dataset and dataloader
+    train_dataset = TensorDataset(train_x_tensor, train_y_tensor)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=5, shuffle=True)
     
     # Test different model configurations
     layer_configs = [
@@ -33,27 +150,22 @@ def optimize_model():
     for i, config in enumerate(layer_configs):
         print(f"\nTesting configuration {i+1}:")
         for layer in config:
-            print(f"- Dense({layer[0]}) with Dropout({layer[1]})")
+            print(f"- Linear({layer[0]}) with Dropout({layer[1]})")
         
         # Build model with this configuration
-        model = build_custom_model(len(words), len(classes), config)
+        model = IntentClassifierNN(len(words), len(classes), config)
         
-        # Compile model
-        sgd = tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=True)
-        model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+        # Define loss function and optimizer
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
         
         # Train model
         start_time = time.time()
-        history = model.fit(
-            np.array(train_x), np.array(train_y),
-            epochs=100,
-            batch_size=5,
-            verbose=0
-        )
+        history = train_model(model, train_loader, criterion, optimizer, epochs=100)
         end_time = time.time()
         
         # Evaluate model
-        loss, accuracy = model.evaluate(np.array(train_x), np.array(train_y), verbose=0)
+        loss, accuracy = evaluate_model(model, train_loader)
         training_time = end_time - start_time
         
         print(f"Accuracy: {accuracy:.4f}")
@@ -61,8 +173,7 @@ def optimize_model():
         print(f"Training time: {training_time:.2f} seconds")
         
         # Get model size
-        model.save('models/temp_model.h5')
-        model_size = os.path.getsize('models/temp_model.h5') / (1024 * 1024)  # in MB
+        model_size = get_model_size(model)
         print(f"Model size: {model_size:.2f} MB")
         
         results.append({
@@ -71,7 +182,7 @@ def optimize_model():
             'loss': loss,
             'training_time': training_time,
             'model_size': model_size,
-            'history': history.history
+            'history': {'loss': history['loss'], 'accuracy': history['accuracy']}
         })
     
     # Find the best model
@@ -80,7 +191,7 @@ def optimize_model():
     
     print("\n=== Best Model Configuration ===")
     for layer in best_model['config']:
-        print(f"- Dense({layer[0]}) with Dropout({layer[1]})")
+        print(f"- Linear({layer[0]}) with Dropout({layer[1]})")
     print(f"Accuracy: {best_model['accuracy']:.4f}")
     print(f"Loss: {best_model['loss']:.4f}")
     print(f"Training time: {best_model['training_time']:.2f} seconds")
@@ -132,26 +243,17 @@ def optimize_model():
             'loss': float(best_model['loss'])
         }, f)
     
+    # Save the best model
+    best_model_config = best_model['config']
+    best_model_obj = IntentClassifierNN(len(words), len(classes), best_model_config)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(best_model_obj.parameters(), lr=0.01, momentum=0.9)
+    train_model(best_model_obj, train_loader, criterion, optimizer, epochs=100)
+    torch.save(best_model_obj, 'models/best_model.pt')
+    
     print("Optimization complete. Results saved to model_optimization_results.png")
 
-def build_custom_model(input_shape, output_shape, layer_config):
-    """Build a model with custom layer configuration"""
-    model = tf.keras.models.Sequential()
-    
-    # Add first layer with input shape
-    model.add(tf.keras.layers.Dense(layer_config[0][0], input_shape=(input_shape,), activation='relu'))
-    model.add(tf.keras.layers.Dropout(layer_config[0][1]))
-    
-    # Add additional layers
-    for neurons, dropout_rate in layer_config[1:]:
-        model.add(tf.keras.layers.Dense(neurons, activation='relu'))
-        model.add(tf.keras.layers.Dropout(dropout_rate))
-    
-    # Add output layer
-    model.add(tf.keras.layers.Dense(output_shape, activation='softmax'))
-    
-    return model
-
 if __name__ == "__main__":
-    import os
+    # Make sure the models directory exists
+    os.makedirs('models', exist_ok=True)
     optimize_model()
