@@ -3,12 +3,131 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
-import pickle
 import time
-import matplotlib.pyplot as plt
 import os
 import json
-from src.nlp.preprocessing import TextPreprocessor  # Assuming this exists
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+import re
+import nltk
+from nltk.stem import WordNetLemmatizer
+import random
+
+# Ensure NLTK data is downloaded
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+    nltk.download('punkt')
+
+class TextPreprocessor:
+    """A standalone text preprocessor that mimics the original functionality"""
+    def __init__(self, intents_file):
+        self.intents_file = intents_file
+        self.lemmatizer = WordNetLemmatizer()
+        self.intents = self.load_intents()
+        self.words = []
+        self.classes = []
+        self.documents = []
+        
+    def load_intents(self):
+        """Load the intents from a JSON file"""
+        try:
+            with open(self.intents_file, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            # Create a simple sample dataset if file doesn't exist
+            print(f"Warning: {self.intents_file} not found. Using sample data instead.")
+            return {
+                "intents": [
+                    {
+                        "tag": "greeting",
+                        "patterns": ["Hi", "Hello", "Hey", "How are you", "Good day"],
+                        "responses": ["Hello!", "Hi there!", "How can I help you?"]
+                    },
+                    {
+                        "tag": "goodbye",
+                        "patterns": ["Bye", "See you later", "Goodbye", "I'm leaving"],
+                        "responses": ["Goodbye!", "See you later", "Have a nice day"]
+                    },
+                    {
+                        "tag": "thanks",
+                        "patterns": ["Thank you", "Thanks", "That's helpful"],
+                        "responses": ["You're welcome!", "Any time!", "My pleasure"]
+                    },
+                    {
+                        "tag": "help",
+                        "patterns": ["I need help", "Can you help me", "Support"],
+                        "responses": ["How can I help?", "What do you need help with?"]
+                    }
+                ]
+            }
+    
+    def clean_text(self, text):
+        """Clean and tokenize text"""
+        # Remove special characters
+        text = re.sub(r'[^\w\s]', '', text.lower())
+        # Tokenize
+        words = nltk.word_tokenize(text)
+        # Lemmatize each word
+        return [self.lemmatizer.lemmatize(word) for word in words]
+    
+    def preprocess(self):
+        """Process the intents data"""
+        for intent in self.intents["intents"]:
+            tag = intent["tag"]
+            # Add tag to classes if not present
+            if tag not in self.classes:
+                self.classes.append(tag)
+            
+            # Process each pattern
+            for pattern in intent["patterns"]:
+                word_list = self.clean_text(pattern)
+                self.words.extend(word_list)
+                self.documents.append((word_list, tag))
+        
+        # Remove duplicates and sort
+        self.words = sorted(list(set(self.words)))
+        self.classes = sorted(self.classes)
+        
+        print(f"Number of documents: {len(self.documents)}")
+        print(f"Number of classes: {len(self.classes)}")
+        print(f"Number of unique lemmatized words: {len(self.words)}")
+        
+        return self.words, self.classes, self.documents
+    
+    def create_training_data(self):
+        """Create the training data"""
+        training = []
+        
+        # Create an empty array for output
+        output_empty = [0] * len(self.classes)
+        
+        # Create training set, bag of words for each sentence
+        for doc in self.documents:
+            # Initialize bag of words
+            bag = [0] * len(self.words)
+            word_patterns = doc[0]
+            
+            # Create bag of words array
+            for word in word_patterns:
+                bag[self.words.index(word)] = 1
+            
+            # Output is '0' for each tag and '1' for current tag
+            output_row = list(output_empty)
+            output_row[self.classes.index(doc[1])] = 1
+            
+            training.append([bag, output_row])
+        
+        # Shuffle the training data
+        random.shuffle(training)
+        
+        # Split into X and y values
+        train_x = [item[0] for item in training]
+        train_y = [item[1] for item in training]
+        
+        return train_x, train_y
 
 class IntentClassifierNN(nn.Module):
     """PyTorch implementation of the intent classifier neural network"""
@@ -38,8 +157,14 @@ class IntentClassifierNN(nn.Module):
 
 def train_model(model, train_loader, criterion, optimizer, epochs=100):
     """Train the PyTorch model"""
-    device = torch.device("mps" if torch.backends.mps.is_available() else 
-                         "cuda" if torch.cuda.is_available() else "cpu")
+    # Check for MPS (Apple Silicon) availability
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    
     print(f"Using device: {device}")
     
     model.to(device)
@@ -86,8 +211,13 @@ def train_model(model, train_loader, criterion, optimizer, epochs=100):
 
 def evaluate_model(model, data_loader):
     """Evaluate the model accuracy"""
-    device = torch.device("mps" if torch.backends.mps.is_available() else 
-                         "cuda" if torch.cuda.is_available() else "cpu")
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+        
     model.to(device)
     model.eval()
     
@@ -115,6 +245,7 @@ def evaluate_model(model, data_loader):
 
 def get_model_size(model):
     """Get the size of the PyTorch model in MB"""
+    os.makedirs('models', exist_ok=True)
     model_path = 'models/temp_model.pt'
     torch.save(model.state_dict(), model_path)
     size_mb = os.path.getsize(model_path) / (1024 * 1024)
@@ -124,8 +255,14 @@ def optimize_model():
     """Optimize the model and evaluate its performance"""
     print("Loading model and data...")
     
+    # Make directories if they don't exist
+    os.makedirs('data/intents', exist_ok=True)
+    os.makedirs('models', exist_ok=True)
+    
+    intents_file = 'data/intents/intents.json'
+    
     # Load the preprocessor and prepare data
-    preprocessor = TextPreprocessor('data/intents/intents.json')
+    preprocessor = TextPreprocessor(intents_file)
     words, classes, documents = preprocessor.preprocess()
     train_x, train_y = preprocessor.create_training_data()
     
@@ -206,7 +343,7 @@ def optimize_model():
     plt.bar(range(len(results)), accuracies)
     plt.title('Model Accuracy Comparison')
     plt.xticks(range(len(results)), [f"Config {i+1}" for i in range(len(results))])
-    plt.ylim(0.8, 1.0)
+    plt.ylim(0.8, 1.0)  # Adjust as needed
     
     # Training time comparison
     plt.subplot(2, 2, 2)
@@ -224,8 +361,9 @@ def optimize_model():
     
     # Learning curve of best model
     plt.subplot(2, 2, 4)
-    plt.plot(best_model['history']['accuracy'])
-    plt.plot(best_model['history']['loss'])
+    epochs = range(1, len(best_model['history']['accuracy']) + 1)
+    plt.plot(epochs, best_model['history']['accuracy'])
+    plt.plot(epochs, best_model['history']['loss'])
     plt.title('Best Model Learning Curve')
     plt.ylabel('Value')
     plt.xlabel('Epoch')
@@ -240,7 +378,9 @@ def optimize_model():
         json.dump({
             'config': [[int(layer[0]), float(layer[1])] for layer in best_model['config']],
             'accuracy': float(best_model['accuracy']),
-            'loss': float(best_model['loss'])
+            'loss': float(best_model['loss']),
+            'words': words,
+            'classes': classes
         }, f)
     
     # Save the best model
