@@ -2,14 +2,22 @@ import json
 import pickle
 import numpy as np
 import nltk
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
 from nltk.stem import WordNetLemmatizer
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
 import torch
 
 # Download necessary NLTK data
-nltk.download('punkt')
-nltk.download('wordnet')
+# # nltk.download('punkt')
+# # nltk.download('wordnet')
 
 class TextPreprocessor:
     def __init__(self, intents_file):
