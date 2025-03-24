@@ -20,8 +20,8 @@ class CRMIntegration:
         customers = {
             'CUST001': {
                 'id': 'CUST001',
-                'name': 'John Doe',
-                'email': 'john.doe@example.com',
+                'name': 'Bran Don',
+                'email': 'bran.don@example.com',
                 'phone': '123-456-7890',
                 'membership_level': 'Gold',
                 'last_purchase_date': '2025-03-15'

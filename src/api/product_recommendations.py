@@ -103,3 +103,4 @@ def get_popular_products():
     """Get generally popular products"""
     products = [{'id': prod_id, **product} for prod_id, product in PRODUCTS.items()]
     return sorted(products, key=lambda x: x['rating'], reverse=True)[:3]
+
