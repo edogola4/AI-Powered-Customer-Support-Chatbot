@@ -19,6 +19,14 @@ import os
 
 # Set NLTK data path
 nltk.data.path.append(os.path.expanduser('~/nltk_data'))
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
 import ssl
 import os
 import sys
@@ -42,7 +50,7 @@ def download_nltk_resources():
     print("Downloading NLTK resources...")
     for resource in resources:
         try:
-            # # # # # nltk.download(resource, quiet=False)
+            # # # # # # # nltk.download(resource, quiet=False)
             print(f"Successfully downloaded {resource}")
         except Exception as e:
             print(f"Error downloading {resource}: {e}")

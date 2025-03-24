@@ -31,6 +31,14 @@ import os
 
 # Set NLTK data path
 nltk.data.path.append(os.path.expanduser('~/nltk_data'))
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
+import os
+
+# Set NLTK data path
+nltk.data.path.append(os.path.expanduser('~/nltk_data'))
 from nltk.stem import WordNetLemmatizer
 import random
 
@@ -38,8 +46,8 @@ import random
 try:
     nltk.data.find('corpora/wordnet')
 except LookupError:
-    # # # # # nltk.download('wordnet')
-    # # # # # nltk.download('punkt')
+    # # # # # # # nltk.download('wordnet')
+    # # # # # # # nltk.download('punkt')
 
 class TextPreprocessor:
     """A standalone text preprocessor that mimics the original functionality"""
