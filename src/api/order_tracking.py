@@ -1,6 +1,4 @@
-from flask import Blueprint, request, jsonify
-import requests
-import os
+from flask import Blueprint, jsonify
 from dotenv import load_dotenv
 
 # Load environment variables
