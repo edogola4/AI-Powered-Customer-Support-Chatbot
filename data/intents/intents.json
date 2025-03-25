@@ -1,29 +1,54 @@
 {
-    "intents": [
-      {
-        "tag": "greeting",
-        "patterns": ["Hi", "Hello", "Hey there", "Good day", "Greetings"],
-        "responses": ["Hello! How can I help you today?", "Hi there! What can I assist you with?"]
-      },
-      {
-        "tag": "goodbye",
-        "patterns": ["Bye", "See you later", "Goodbye", "Thanks, bye"],
-        "responses": ["Goodbye! Have a great day!", "Thanks for chatting. Come back if you need help!"]
-      },
-      {
-        "tag": "order_status",
-        "patterns": ["Where is my order?", "Check order status", "When will my order arrive?", "Track my package"],
-        "responses": ["I'll help you track your order. Could you provide your order number?"]
-      },
-      {
-        "tag": "product_info",
-        "patterns": ["Tell me about this product", "Product details", "Product specifications", "Does this product have"],
-        "responses": ["I can help you with product details. Which product are you interested in?"]
-      },
-      {
-        "tag": "return_policy",
-        "patterns": ["How do I return?", "Return policy", "Can I get a refund?", "Exchange item"],
-        "responses": ["Our return policy allows returns within 30 days of purchase. Would you like more details?"]
-      }
-    ]
-  }
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["Hi", "Hello", "Hey there", "Good day", "Greetings"],
+      "responses": ["Hello! How can I help you today?", "Hi there! What can I assist you with?"]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "See you later", "Goodbye", "Thanks, bye"],
+      "responses": ["Goodbye! Have a great day!", "Thanks for chatting. Come back if you need help!"]
+    },
+    {
+      "tag": "order_status",
+      "patterns": ["Where is my order?", "Check order status", "When will my order arrive?", "Track my package"],
+      "responses": ["I'll help you track your order. Could you provide your order number?"]
+    },
+    {
+      "tag": "product_info",
+      "patterns": ["Tell me about this product", "Product details", "Product specifications", "Does this product have"],
+      "responses": ["I can help you with product details. Which product are you interested in?"]
+    },
+    {
+      "tag": "return_policy",
+      "patterns": ["How do I return?", "Return policy", "Can I get a refund?", "Exchange item"],
+      "responses": ["Our return policy allows returns within 30 days of purchase. Would you like more details?"]
+    },
+    {
+      "tag": "shipping_info",
+      "patterns": ["What are your shipping options?", "How long is shipping?", "Shipping info", "Tell me about delivery"],
+      "responses": ["We offer standard and expedited shipping. Would you like to know more about the options available?"]
+    },
+    {
+      "tag": "payment_issue",
+      "patterns": ["My payment failed", "Payment error", "I have a payment issue", "Trouble during checkout"],
+      "responses": ["I'm sorry to hear that you're having payment issues. Could you please provide more details so we can assist you better?"]
+    },
+    {
+      "tag": "complaint",
+      "patterns": ["I have a complaint", "I'm not happy with my order", "This is unacceptable", "I want to complain"],
+      "responses": ["I'm sorry to hear that you're experiencing issues. Can you please describe your problem so we can work on a solution?"]
+    },
+    {
+      "tag": "discount_offer",
+      "patterns": ["Are there any discounts?", "Do you have promo codes?", "Any special offers", "Discount available"],
+      "responses": ["We often have special offers and promo codes. What product are you interested in, so I can check for applicable discounts?"]
+    },
+    {
+      "tag": "faq",
+      "patterns": ["I need help", "How can I find answers?", "Customer support", "Frequently asked questions"],
+      "responses": ["I can help with common questions. Please ask your question or choose a topic from our FAQs."]
+    }
+  ]
+}
