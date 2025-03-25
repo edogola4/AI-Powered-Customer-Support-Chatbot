@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 import time
 
-chat_api = Blueprint('chat_api', __name__, url_prefix='/api/chat')
+chat_api = Blueprint('chat_api', __name__, url_prefix='/api/chat.')
 
 @chat_api.route('', methods=['POST'])
 def chat():
