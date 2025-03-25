@@ -48,6 +48,7 @@ try:
 except LookupError:
     # # # # # # # nltk.download('wordnet')
     # # # # # # # nltk.download('punkt')
+    pass
 
 class TextPreprocessor:
     """A standalone text preprocessor that mimics the original functionality"""
