@@ -1,10 +1,14 @@
+import sys
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from flask import Flask, render_template
 from flask_cors import CORS
 from src.api.routes import api
 from src.api.order_tracking import order_api
 from src.api.product_recommendations import recommendation_api
 from src.api.ticket_management import ticket_api
-import os
 
 def create_app():
     app = Flask(__name__)
