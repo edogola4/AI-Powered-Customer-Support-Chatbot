@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 
 # Initialize Blueprint
-recommendation_api = Blueprint('recommendation_api', __name__)
+recommendations_api = Blueprint('recommendations_api', __name__, url_prefix='/api/product_recommendations')
+#orders_api = Blueprint('orders_api', __name__, url_prefix='/api/orders')
+
 
 # Mock product database
 PRODUCTS = {
@@ -21,7 +23,7 @@ PURCHASE_HISTORY = {
     'CUST002': ['PROD002', 'PROD003']
 }
 
-@recommendation_api.route('/recommend', methods=['POST'])
+@recommendations_api.route('/recommendations', methods=['POST'])
 def get_recommendations():
     """Get product recommendations based on user ID or product ID"""
     data = request.get_json()

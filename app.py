@@ -7,7 +7,7 @@ from flask import Flask, render_template
 from flask_cors import CORS
 from src.api.routes import api
 from src.api.order_tracking import order_api
-from src.api.product_recommendations import recommendation_api
+from src.api.product_recommendations import recommendations_api
 from src.api.ticket_management import ticket_api
 
 def create_app():
@@ -17,7 +17,7 @@ def create_app():
     # Register blueprints
     app.register_blueprint(api, url_prefix='/api')
     app.register_blueprint(order_api, url_prefix='/api/orders')
-    app.register_blueprint(recommendation_api, url_prefix='/api/recommendations')
+    app.register_blueprint(recommendations_api, url_prefix='/api/recommendations')
     app.register_blueprint(ticket_api, url_prefix='/api/tickets')
     
     @app.route('/')
